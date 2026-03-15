@@ -175,8 +175,7 @@
 @media (max-width: 1023px) {
   .calendar-view { padding: var(--space-4); }
   .cal-cell { min-height: 80px; padding: 5px; }
-  .cal-pill__text { display: none; }
-  .cal-pill { justify-content: center; padding: 3px; }
+  .cal-pill { padding: 3px 5px; }
   .cal-month-label { min-width: 120px; font-size: var(--font-base); }
 }
 @media (max-width: 767px) {
