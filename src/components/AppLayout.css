@@ -140,9 +140,9 @@
 }
 .app-layout--tablet .sidebar {
   position: fixed;
-  top: 0;
+  top: var(--topbar-height);
   left: 0;
-  height: 100%;
+  height: calc(100% - var(--topbar-height));
   z-index: var(--z-overlay);
 }
 .app-layout--tablet .app-main {

@@ -13,6 +13,12 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-4);
+  position: sticky;
+  top: var(--topbar-height, 0px);
+  background: var(--bg-base);
+  z-index: var(--z-sticky);
+  padding-bottom: var(--space-3);
+  margin-bottom: calc(var(--space-3) * -1);
 }
 
 .calendar-nav {
