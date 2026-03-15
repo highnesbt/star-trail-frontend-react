@@ -1,0 +1,15 @@
+.asset-indicators { display: inline-flex; gap: 4px; align-items: center; }
+.asset-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+}
+.asset-chip--video { background: rgba(124,58,237,0.2); }
+.asset-chip--thumb { background: rgba(6,182,212,0.2); }
+.asset-chip--link { cursor: pointer; transition: filter 0.15s, transform 0.15s; }
+.asset-chip--link:hover { filter: brightness(1.5); transform: scale(1.12); }

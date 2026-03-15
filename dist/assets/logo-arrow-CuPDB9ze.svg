@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Star Trail Logo — Arrow mark from Box Theory branding -->
+  <defs>
+    <linearGradient id="arrow-top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#C4C4C4" />
+      <stop offset="100%" stop-color="#9E9E9E" />
+    </linearGradient>
+    <linearGradient id="arrow-bottom" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9E9E9E" />
+      <stop offset="100%" stop-color="#787878" />
+    </linearGradient>
+  </defs>
+  <!-- Upper half of the arrow -->
+  <polygon points="4,6 36,32 4,32" fill="url(#arrow-top)" />
+  <!-- Lower half of the arrow -->
+  <polygon points="4,32 36,32 4,58" fill="url(#arrow-bottom)" />
+  <!-- Inner notch (cutout effect) - creates the hollow arrow look -->
+  <polygon points="4,20 20,32 4,44" fill="#0A0A0F" />
+</svg>

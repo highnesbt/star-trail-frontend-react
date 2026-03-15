@@ -1,0 +1,22 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+}
+.status-badge--sm { font-size: 12px; padding: 3px 9px; }
+.status-badge--md { font-size: 13px; padding: 4px 11px; }
+.status-badge--lg { font-size: 14px; padding: 5px 13px; }
+
+.status-badge--upcoming  { background: var(--status-upcoming-bg);  color: var(--status-upcoming); }
+.status-badge--pending   { background: var(--status-pending-bg);   color: var(--status-pending); }
+.status-badge--pir       { background: var(--status-pir-bg);       color: var(--status-pir); }
+.status-badge--ir        { background: var(--status-ir-bg);        color: var(--status-ir); }
+.status-badge--pcr       { background: var(--status-pcr-bg);       color: var(--status-pcr); }
+.status-badge--resubmit  { background: var(--status-resubmit-bg);  color: var(--status-resubmit); }
+.status-badge--approved  { background: var(--status-approved-bg);  color: var(--status-approved); }
+.status-badge--partial   { background: var(--status-partial-bg);   color: var(--status-partial); }
+.status-badge--posted    { background: var(--status-posted-bg);    color: var(--status-posted); }
+.status-badge--cancelled { background: var(--status-cancelled-bg); color: var(--status-cancelled); }

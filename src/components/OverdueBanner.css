@@ -1,0 +1,23 @@
+.overdue-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px var(--space-6);
+  background: rgba(245,158,11,0.1);
+  border-bottom: 1px solid rgba(245,158,11,0.25);
+  color: var(--warning);
+  font-size: var(--font-sm);
+  animation: fade-in 300ms ease;
+}
+.overdue-banner__icon { font-size: 14px; flex-shrink: 0; }
+.overdue-banner__text { flex: 1; }
+.overdue-banner__text strong { font-weight: 600; }
+.overdue-banner__dismiss {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  transition: all var(--transition-base);
+}
+.overdue-banner__dismiss:hover { color: var(--text-primary); border-color: var(--border-strong); }
