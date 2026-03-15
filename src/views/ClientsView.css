@@ -12,7 +12,7 @@
   padding: var(--space-6) var(--space-6) var(--space-4);
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
-  top: 0;
+  top: var(--topbar-height, 0px);
   background: var(--bg-base);
   z-index: var(--z-sticky);
 }
