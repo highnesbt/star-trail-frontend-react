@@ -148,7 +148,7 @@
   position: fixed;
   top: var(--space-4);
   left: var(--space-4);
-  z-index: var(--z-sticky);
+  z-index: calc(var(--z-overlay) + 1);
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
