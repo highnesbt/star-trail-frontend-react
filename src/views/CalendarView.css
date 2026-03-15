@@ -46,7 +46,7 @@
 
 .calendar-day-headers {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   border-bottom: 1px solid var(--border-subtle);
 }
 .cal-day-header {
@@ -59,7 +59,7 @@
 
 .calendar-grid, .calendar-skeleton {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
 }
 
 .cal-cell {
@@ -70,6 +70,8 @@
   position: relative;
   cursor: default;
   transition: background var(--transition-fast);
+  overflow: hidden;
+  min-width: 0;
 }
 .cal-cell:nth-child(7n) { border-right: none; }
 .cal-cell--empty { background: rgba(0,0,0,0.02); }
