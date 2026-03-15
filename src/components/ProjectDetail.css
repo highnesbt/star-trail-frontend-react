@@ -246,6 +246,23 @@
 }
 .asset-open-btn:hover { background: rgba(124,58,237,0.2); }
 
+.caption-copy-btn {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--violet-400);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(124,58,237,0.1);
+  border: 1px solid rgba(124,58,237,0.25);
+  transition: all var(--transition-base);
+}
+.caption-copy-btn:hover { background: rgba(124,58,237,0.2); }
+.caption-copy-btn--copied {
+  color: #10B981;
+  background: rgba(16,185,129,0.1);
+  border-color: rgba(16,185,129,0.25);
+}
+
 /* Context label in status dropdown */
 .status-dropdown__item--labeled {
   display: flex;

@@ -115,6 +115,7 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
   const [pendingStatus, setPendingStatus] = useState(null)
   const [generalNote, setGeneralNote] = useState('')
   const [submittingNote, setSubmittingNote] = useState(false)
+  const [captionCopied, setCaptionCopied] = useState(false)
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
@@ -386,7 +387,25 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
                     </div>
                   </div>
 
-                  <EditableField label="Caption" value={project.caption} onSave={v => updateField('caption', v)} multiline />
+                  <div className="asset-link-field">
+                    <div className="asset-link-field__header">
+                      <label>Caption</label>
+                      {project.caption && (
+                        <button
+                          className={`caption-copy-btn${captionCopied ? ' caption-copy-btn--copied' : ''}`}
+                          onClick={() => {
+                            navigator.clipboard.writeText(project.caption).then(() => {
+                              setCaptionCopied(true)
+                              setTimeout(() => setCaptionCopied(false), 2000)
+                            })
+                          }}
+                        >
+                          {captionCopied ? '✓ Copied' : 'Copy'}
+                        </button>
+                      )}
+                    </div>
+                    <EditableField value={project.caption} onSave={v => updateField('caption', v)} multiline />
+                  </div>
 
                   {/* Platforms */}
                   <div className="detail-section">
