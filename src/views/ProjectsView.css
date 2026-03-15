@@ -136,7 +136,7 @@
   border-bottom: 1px solid var(--border-subtle);
   white-space: nowrap;
   position: sticky;
-  top: var(--topbar-height, 0px);
+  top: 0;
   background: var(--bg-base);
   z-index: var(--z-sticky);
 }
