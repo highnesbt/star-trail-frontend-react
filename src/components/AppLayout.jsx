@@ -76,8 +76,10 @@ export default function AppLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-  const [isTablet, setIsTablet] = useState(window.innerWidth >= 768 && window.innerWidth < 1024)
+  const mobileQuery = window.matchMedia('(max-width: 767px)')
+  const tabletQuery = window.matchMedia('(min-width: 768px) and (max-width: 1023px)')
+  const [isMobile, setIsMobile] = useState(mobileQuery.matches)
+  const [isTablet, setIsTablet] = useState(tabletQuery.matches)
   const { permission, subscribed, subscribe } = usePushNotifications()
   const toast = useToast()
   const [pushBannerDismissed, setPushBannerDismissed] = useState(
@@ -100,11 +102,15 @@ export default function AppLayout() {
 
   useEffect(() => {
     const handler = () => {
-      setIsMobile(window.innerWidth < 768)
-      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1024)
+      setIsMobile(mobileQuery.matches)
+      setIsTablet(tabletQuery.matches)
     }
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
+    mobileQuery.addEventListener('change', handler)
+    tabletQuery.addEventListener('change', handler)
+    return () => {
+      mobileQuery.removeEventListener('change', handler)
+      tabletQuery.removeEventListener('change', handler)
+    }
   }, [])
 
   const handleLogout = () => {
