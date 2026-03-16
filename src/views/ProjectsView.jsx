@@ -303,6 +303,21 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function getWeekRange(offset) {
+  const today = new Date()
+  const dow = today.getDay()
+  const mondayDelta = dow === 0 ? -6 : 1 - dow
+  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + mondayDelta + offset * 7)
+  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6)
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  return { start: iso(monday), end: iso(sunday), monday, sunday }
+}
+
+function formatWeekLabel({ monday, sunday }) {
+  const fmt = d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+  return `${fmt(monday)} – ${fmt(sunday)}`
+}
+
 export default function ProjectsView() {
   const { user } = useAuth()
   const { projects, loading, error, createProject, fetch } = useProjects()
@@ -314,10 +329,14 @@ export default function ProjectsView() {
   const [showCreate, setShowCreate] = useState(false)
   const [openProject, setOpenProject] = useState(null)
   const [showBulkWizard, setShowBulkWizard] = useState(false)
+  const [weekOffset, setWeekOffset] = useState(0)
+  const [dateMode, setDateMode] = useState('week') // 'week' | 'all'
 
   useEffect(() => { localStorage.setItem(VIEW_KEY, view) }, [view])
 
   const ACTIVE_STATUSES = new Set(['upcoming','pending','pending_internal_review','internal_revision','pending_client_review','resubmit','client_approved','partially_posted'])
+
+  const weekRange = getWeekRange(weekOffset)
 
   const filtered = projects.filter(p => {
     const matchSearch = !search || 
@@ -328,7 +347,10 @@ export default function ProjectsView() {
       : statusFilter === 'active'
         ? ACTIVE_STATUSES.has(p.status)
         : p.status === statusFilter
-    return matchSearch && matchStatus
+    const matchDate = dateMode === 'all' || (
+      p.posting_date >= weekRange.start && p.posting_date <= weekRange.end
+    )
+    return matchSearch && matchStatus && matchDate
   })
 
   const handleCreate = async (payload) => {
@@ -346,6 +368,29 @@ export default function ProjectsView() {
       <div className="projects-view__header">
         <h1 className="page-title">Projects</h1>
         <div className="projects-view__actions">
+          <div className="week-nav">
+            <button
+              className="week-nav__arrow"
+              onClick={() => { setDateMode('week'); setWeekOffset(o => o - 1) }}
+              aria-label="Previous week"
+              disabled={dateMode === 'all'}
+            >‹</button>
+            <span className="week-nav__label">{formatWeekLabel(weekRange)}</span>
+            <button
+              className="week-nav__arrow"
+              onClick={() => { setDateMode('week'); setWeekOffset(o => o + 1) }}
+              aria-label="Next week"
+              disabled={dateMode === 'all'}
+            >›</button>
+            {(weekOffset !== 0 && dateMode === 'week') && (
+              <button className="week-nav__chip" onClick={() => setWeekOffset(0)}>This week</button>
+            )}
+            <button
+              className={`week-nav__chip${dateMode === 'all' ? ' active' : ''}`}
+              onClick={() => setDateMode(m => m === 'all' ? 'week' : 'all')}
+            >All</button>
+          </div>
+
           <div className="search-box" role="search">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input
@@ -398,7 +443,7 @@ export default function ProjectsView() {
       ) : filtered.length === 0 ? (
         <div className="empty-state">
           <p>No projects found.</p>
-          {(search || statusFilter) && <button className="link-btn" onClick={() => { setSearch(''); setStatusFilter('') }}>Clear filters</button>}
+          {(search || statusFilter) && <button className="link-btn" onClick={() => { setSearch(''); setStatusFilter(''); setDateMode('week'); setWeekOffset(0) }}>Clear filters</button>}
         </div>
       ) : view === 'table' ? (
         <TableView projects={filtered} onOpen={setOpenProject} user={user} />

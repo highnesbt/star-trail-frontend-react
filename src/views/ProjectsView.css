@@ -35,6 +35,55 @@
   flex-wrap: wrap;
 }
 
+/* Week navigator */
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.week-nav__arrow {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-base);
+}
+.week-nav__arrow:hover:not(:disabled) { background: var(--bg-hover); }
+.week-nav__arrow:disabled { opacity: 0.4; cursor: default; }
+.week-nav__label {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 130px;
+  text-align: center;
+  user-select: none;
+}
+.week-nav__chip {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-base), color var(--transition-base);
+  white-space: nowrap;
+}
+.week-nav__chip:hover { background: var(--bg-hover); color: var(--text-primary); }
+.week-nav__chip.active {
+  background: var(--violet-900);
+  color: var(--violet-400);
+  border-color: var(--violet-700);
+}
+
 /* Search */
 .search-box {
   display: flex;
