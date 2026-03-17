@@ -11,8 +11,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Star Trail'
   const options = {
     body: data.body || '',
-    icon: '/logo-arrow.svg',
-    badge: '/logo-arrow.svg',
+    icon: '/android-chrome-192x192.png',
+    badge: '/favicon-32x32.png',
     data: { url: data.url || '/' },
     vibrate: [200, 100, 200],
   }
