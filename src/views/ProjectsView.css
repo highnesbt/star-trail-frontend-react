@@ -226,34 +226,31 @@
 .project-row__platforms { display: flex; gap: 4px; }
 .project-row__date { color: var(--text-secondary); white-space: nowrap; font-size: var(--font-sm); }
 
-/* Day separator (WhatsApp-style) */
-.day-separator td {
-  padding: 0;
-  border-bottom: none;
+/* Day groups */
+.day-group--spaced {
+  margin-top: 6px;
+  border-top: 1px solid var(--border-subtle);
 }
-.day-separator__inner {
+.day-group__header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 18px 16px 8px;
+  gap: 8px;
+  padding: 10px 16px 2px;
 }
-.day-separator__line {
-  flex: 1;
-  height: 1px;
-  background: var(--border-subtle);
-}
-.day-separator__label {
+.day-group__label {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+.day-group__count {
+  font-size: 10px;
+  font-weight: 500;
   color: var(--text-muted);
-  background: var(--bg-surface);
-  padding: 4px 12px;
+  background: var(--bg-overlay);
+  padding: 1px 6px;
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-subtle);
-  white-space: nowrap;
-  user-select: none;
 }
 
 .revision-badge {

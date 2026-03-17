@@ -116,29 +116,26 @@ function TableView({ projects, onOpen, user }) {
 
   return (
     <div className="projects-table-wrap">
-      <table className="projects-table">
-        <thead>
-          <tr>
-            <th>Project</th>
-            <th>Client</th>
-            <th>Status</th>
-            <th>Platforms</th>
-            <th>Assets</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {groups.map(group => (
-            <>
-              <tr key={`sep-${group.date}`} className="day-separator">
-                <td colSpan="6">
-                  <div className="day-separator__inner">
-                    <span className="day-separator__line" />
-                    <span className="day-separator__label">{formatDayLabel(group.date)}</span>
-                    <span className="day-separator__line" />
-                  </div>
-                </td>
-              </tr>
+      {groups.map((group, gi) => (
+        <div key={group.date} className={`day-group${gi > 0 ? ' day-group--spaced' : ''}`}>
+          <div className="day-group__header">
+            <span className="day-group__label">{formatDayLabel(group.date)}</span>
+            <span className="day-group__count">{group.projects.length}</span>
+          </div>
+          <table className="projects-table">
+            {gi === 0 && (
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Client</th>
+                  <th>Status</th>
+                  <th>Platforms</th>
+                  <th>Assets</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+            )}
+            <tbody>
               {group.projects.map(p => (
                 <tr key={p.id} className="project-row" onClick={() => onOpen(p)} style={{ '--client-color': p.client_color || '#7C3AED' }}>
                   <td>
@@ -170,10 +167,10 @@ function TableView({ projects, onOpen, user }) {
                   <td><span className="project-row__date">{formatDate(p.posting_date)}</span></td>
                 </tr>
               ))}
-            </>
-          ))}
-        </tbody>
-      </table>
+            </tbody>
+          </table>
+        </div>
+      ))}
     </div>
   )
 }
