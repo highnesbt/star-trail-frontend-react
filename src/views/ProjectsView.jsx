@@ -80,7 +80,40 @@ function QuickStatusChanger({ project, isManager, onChanged }) {
   )
 }
 
+function formatDayLabel(dateStr) {
+  if (!dateStr) return 'No Date'
+  const d = new Date(dateStr + 'T00:00:00')
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  if (d.getTime() === today.getTime()) return 'Today'
+  if (d.getTime() === tomorrow.getTime()) return 'Tomorrow'
+  if (d.getTime() === yesterday.getTime()) return 'Yesterday'
+  return d.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function groupByDate(projects) {
+  const groups = []
+  let lastDate = null
+  for (const p of projects) {
+    const date = p.posting_date || ''
+    if (date !== lastDate) {
+      groups.push({ date, projects: [] })
+      lastDate = date
+    }
+    groups[groups.length - 1].projects.push(p)
+  }
+  return groups
+}
+
 function TableView({ projects, onOpen, user }) {
+  const sorted = [...projects].sort((a, b) => (a.posting_date || '').localeCompare(b.posting_date || ''))
+  const groups = groupByDate(sorted)
+
   return (
     <div className="projects-table-wrap">
       <table className="projects-table">
@@ -95,36 +128,49 @@ function TableView({ projects, onOpen, user }) {
           </tr>
         </thead>
         <tbody>
-          {projects.map(p => (
-            <tr key={p.id} className="project-row" onClick={() => onOpen(p)} style={{ '--client-color': p.client_color || '#7C3AED' }}>
-              <td>
-                <div className="project-row__desc">
-                  <span className="project-row__stripe" />
-                  <span className="project-row__text">{p.description || <em className="text-muted">No description</em>}</span>
-                  {(p.revision_count > 1) && <span className="revision-badge">×{p.revision_count}</span>}
-                </div>
-              </td>
-              <td><span className="project-row__client">{p.client_name}</span></td>
-              <td>
-                <QuickStatusChanger project={p} isManager={user?.role === 'manager'} />
-              </td>
-              <td>
-                <div className="project-row__platforms">
-                  {(p.platforms || []).map(pl => (
-                    <PlatformChip key={pl} platform={pl} posted={p.platform_statuses?.[pl]} />
-                  ))}
-                </div>
-              </td>
-              <td>
-                <AssetIndicator
-                  hasVideo={Boolean(p.video_post_link)}
-                  hasThumbnail={Boolean(p.thumbnail_link)}
-                  videoUrl={p.video_post_link}
-                  thumbnailUrl={p.thumbnail_link}
-                />
-              </td>
-              <td><span className="project-row__date">{formatDate(p.posting_date)}</span></td>
-            </tr>
+          {groups.map(group => (
+            <>
+              <tr key={`sep-${group.date}`} className="day-separator">
+                <td colSpan="6">
+                  <div className="day-separator__inner">
+                    <span className="day-separator__line" />
+                    <span className="day-separator__label">{formatDayLabel(group.date)}</span>
+                    <span className="day-separator__line" />
+                  </div>
+                </td>
+              </tr>
+              {group.projects.map(p => (
+                <tr key={p.id} className="project-row" onClick={() => onOpen(p)} style={{ '--client-color': p.client_color || '#7C3AED' }}>
+                  <td>
+                    <div className="project-row__desc">
+                      <span className="project-row__stripe" />
+                      <span className="project-row__text">{p.description || <em className="text-muted">No description</em>}</span>
+                      {(p.revision_count > 1) && <span className="revision-badge">×{p.revision_count}</span>}
+                    </div>
+                  </td>
+                  <td><span className="project-row__client">{p.client_name}</span></td>
+                  <td>
+                    <QuickStatusChanger project={p} isManager={user?.role === 'manager'} />
+                  </td>
+                  <td>
+                    <div className="project-row__platforms">
+                      {(p.platforms || []).map(pl => (
+                        <PlatformChip key={pl} platform={pl} posted={p.platform_statuses?.[pl]} />
+                      ))}
+                    </div>
+                  </td>
+                  <td>
+                    <AssetIndicator
+                      hasVideo={Boolean(p.video_post_link)}
+                      hasThumbnail={Boolean(p.thumbnail_link)}
+                      videoUrl={p.video_post_link}
+                      thumbnailUrl={p.thumbnail_link}
+                    />
+                  </td>
+                  <td><span className="project-row__date">{formatDate(p.posting_date)}</span></td>
+                </tr>
+              ))}
+            </>
           ))}
         </tbody>
       </table>
