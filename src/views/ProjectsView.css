@@ -226,31 +226,23 @@
 .project-row__platforms { display: flex; gap: 4px; }
 .project-row__date { color: var(--text-secondary); white-space: nowrap; font-size: var(--font-sm); }
 
-/* Day groups */
-.day-group--spaced {
-  margin-top: 6px;
-  border-top: 1px solid var(--border-subtle);
+/* Day grouping */
+.project-row--day-start td {
+  border-top: 2px solid var(--border-default);
+  padding-top: 18px;
 }
-.day-group__header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px 2px;
+.project-row--day-start:first-child td {
+  border-top: none;
+  padding-top: 14px;
 }
-.day-group__label {
-  font-size: 11px;
+.project-row__day-label {
+  display: block;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-secondary);
-}
-.day-group__count {
-  font-size: 10px;
-  font-weight: 500;
   color: var(--text-muted);
-  background: var(--bg-overlay);
-  padding: 1px 6px;
-  border-radius: var(--radius-full);
+  margin-bottom: 2px;
 }
 
 .revision-badge {
