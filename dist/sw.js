@@ -1,10 +1,18 @@
+self.addEventListener('install', (event) => {
+  self.skipWaiting()
+})
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim())
+})
+
 self.addEventListener('push', (event) => {
   const data = event.data?.json() || {}
   const title = data.title || 'Star Trail'
   const options = {
     body: data.body || '',
-    icon: '/logo-arrow.svg',
-    badge: '/logo-arrow.svg',
+    icon: '/android-chrome-192x192.png',
+    badge: '/favicon-32x32.png',
     data: { url: data.url || '/' },
     vibrate: [200, 100, 200],
   }
