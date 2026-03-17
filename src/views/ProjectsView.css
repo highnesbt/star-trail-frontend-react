@@ -226,23 +226,25 @@
 .project-row__platforms { display: flex; gap: 4px; }
 .project-row__date { color: var(--text-secondary); white-space: nowrap; font-size: var(--font-sm); }
 
-/* Day grouping */
-.project-row--day-start td {
-  border-top: 2px solid var(--border-default);
-  padding-top: 18px;
+/* Day label capsule */
+.day-label-row td {
+  padding: 24px 16px 8px;
+  border-bottom: none;
 }
-.project-row--day-start:first-child td {
-  border-top: none;
-  padding-top: 14px;
+.day-label-row:first-child td {
+  padding-top: 12px;
 }
-.project-row__day-label {
-  display: block;
-  font-size: 10px;
+.day-capsule {
+  display: inline-block;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--text-muted);
-  margin-bottom: 2px;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
 }
 
 .revision-badge {
