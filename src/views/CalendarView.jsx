@@ -352,6 +352,7 @@ export default function CalendarView() {
                           style={{ background: STATUS_DOTS[ev.status] || '#6B7280' }}
                         />
                         <span className="cal-pill__text">{ev.description || ev.client_name}</span>
+                        {ev.client_logo && <img src={ev.client_logo} alt="" className="cal-pill__logo" />}
                       </button>
                     ))}
                   </div>
@@ -381,6 +382,7 @@ export default function CalendarView() {
                       <span className="cal-pill__stripe" />
                       <span className="cal-pill__dot" style={{ background: STATUS_DOTS[p.status] || '#6B7280' }} />
                       <span className="cal-pill__text">{p.description || p.client_name}</span>
+                      {p.client_logo && <img src={p.client_logo} alt="" className="cal-pill__logo" />}
                     </button>
                   ))}
                 </div>

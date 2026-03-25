@@ -124,6 +124,54 @@
 .client-color-swatch { width: 20px; height: 20px; border-radius: var(--radius-sm); border: 1px solid var(--border-default); }
 .client-color-hex { font-size: var(--font-sm); color: var(--text-secondary); font-family: monospace; }
 
+/* Logo upload */
+.logo-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-default);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+.logo-upload-btn:hover { border-color: var(--violet-400); color: var(--violet-400); }
+.logo-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  position: relative;
+}
+.logo-preview__img {
+  width: 48px; height: 48px;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+.logo-preview__remove {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  color: var(--text-muted);
+  font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+.logo-preview__remove:hover { color: var(--error); border-color: var(--error); }
+.client-detail-logo {
+  width: 52px; height: 52px;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+
 .client-form { display: flex; flex-direction: column; gap: var(--space-4); }
 .client-form__actions { display: flex; justify-content: flex-end; gap: var(--space-3); padding-top: var(--space-2); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }

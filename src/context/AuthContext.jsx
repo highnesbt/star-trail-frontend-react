@@ -59,8 +59,9 @@ export function AuthProvider({ children }) {
   /** Core API fetch with auto-retry on 401 */
   const apiFetch = useCallback(async (path, options = {}) => {
     const doRequest = async (token) => {
+      const isFormData = options.body instanceof FormData
       const headers = {
-        'Content-Type': 'application/json',
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       }

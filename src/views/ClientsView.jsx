@@ -21,8 +21,22 @@ function ClientForm({ initial = {}, onSave, onCancel }) {
     default_platforms: initial.default_platforms || [],
     default_post_time: initial.default_post_time || '18:00:00',
   })
+  const [logoFile, setLogoFile] = useState(null)
+  const [logoPreview, setLogoPreview] = useState(initial.logo || null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setLogoFile(file)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  const removeLogo = () => {
+    setLogoFile(null)
+    setLogoPreview(null)
+  }
 
   const togglePlatform = (pl) =>
     setForm(f => ({
@@ -37,7 +51,7 @@ function ClientForm({ initial = {}, onSave, onCancel }) {
     setLoading(true)
     setError('')
     try {
-      await onSave(form)
+      await onSave(form, logoFile, logoPreview === null && initial.logo)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -96,6 +110,20 @@ function ClientForm({ initial = {}, onSave, onCancel }) {
         <label>Notes</label>
         <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="Internal notes..." />
       </div>
+      <div className="form-field">
+        <label>Logo</label>
+        {logoPreview ? (
+          <div className="logo-preview">
+            <img src={logoPreview} alt="Logo preview" className="logo-preview__img" />
+            <button type="button" className="logo-preview__remove" onClick={removeLogo}>✕</button>
+          </div>
+        ) : (
+          <label className="logo-upload-btn">
+            <input type="file" accept="image/*" onChange={handleLogoChange} hidden />
+            Upload Logo
+          </label>
+        )}
+      </div>
       {error && <p className="form-error">{error}</p>}
       <div className="client-form__actions">
         <button type="button" className="modal-btn modal-btn--ghost" onClick={onCancel}>Cancel</button>
@@ -140,21 +168,35 @@ export default function ClientsView() {
 
   const selectedClient = clients.find(c => c.id === selected)
 
-  const handleCreate = useCallback(async (form) => {
+  const uploadLogo = useCallback(async (clientId, logoFile) => {
+    const fd = new FormData()
+    fd.append('file', logoFile)
+    await apiFetch(`/api/clients/${clientId}/logo`, { method: 'POST', body: fd })
+  }, [apiFetch])
+
+  const deleteLogo = useCallback(async (clientId) => {
+    await apiFetch(`/api/clients/${clientId}/logo`, { method: 'DELETE' })
+  }, [apiFetch])
+
+  const handleCreate = useCallback(async (form, logoFile) => {
     const res = await apiFetch('/api/clients/', { method: 'POST', body: JSON.stringify(form) })
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || 'Failed') }
+    const created = await res.json()
+    if (logoFile) await uploadLogo(created.id, logoFile)
     toast('Client created', 'success')
     setShowCreate(false)
     refetch()
-  }, [apiFetch, toast, refetch])
+  }, [apiFetch, toast, refetch, uploadLogo])
 
-  const handleUpdate = useCallback(async (form) => {
+  const handleUpdate = useCallback(async (form, logoFile, removeLogo) => {
     const res = await apiFetch(`/api/clients/${selected}`, { method: 'PUT', body: JSON.stringify(form) })
     if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || 'Failed') }
+    if (logoFile) await uploadLogo(selected, logoFile)
+    else if (removeLogo) await deleteLogo(selected)
     toast('Client updated', 'success')
     setEditing(false)
     refetch()
-  }, [apiFetch, toast, refetch, selected])
+  }, [apiFetch, toast, refetch, selected, uploadLogo, deleteLogo])
 
   const handleDeactivate = useCallback(async () => {
     const res = await apiFetch(`/api/clients/${deactivateTarget}`, { method: 'DELETE' })
@@ -224,9 +266,13 @@ export default function ClientsView() {
             <div className="client-detail-content">
               <div className="client-detail-header">
                 <div className="client-detail-title">
-                  <div className="client-detail-avatar" style={{ background: selectedClient.color + '25', color: selectedClient.color }}>
-                    {selectedClient.name.slice(0, 2).toUpperCase()}
-                  </div>
+                  {selectedClient.logo ? (
+                    <img src={selectedClient.logo} alt={selectedClient.name} className="client-detail-logo" />
+                  ) : (
+                    <div className="client-detail-avatar" style={{ background: selectedClient.color + '25', color: selectedClient.color }}>
+                      {selectedClient.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <h2>{selectedClient.name}</h2>
                     {selectedClient.brand && <p className="client-detail-brand">{selectedClient.brand}</p>}
