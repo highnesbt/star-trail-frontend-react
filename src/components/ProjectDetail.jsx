@@ -5,6 +5,7 @@ import { useToast } from '../hooks/useToast'
 import StatusBadge, { STATUS_CONFIG } from './StatusBadge'
 import AssetIndicator from './AssetIndicator'
 import PlatformChip from './PlatformChip'
+import ConfirmModal from './ConfirmModal'
 import './ConfirmModal.css'
 import './ProjectDetail.css'
 
@@ -105,7 +106,7 @@ function EditableField({ label, value, onSave, type = 'text', multiline = false,
 
 export default function ProjectDetail({ projectId, onClose, onUpdate }) {
   const { user, apiFetch } = useAuth()
-  const { subscribeProject } = useProjects()
+  const { subscribeProject, deleteProject } = useProjects()
   const toast = useToast()
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -116,6 +117,24 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
   const [generalNote, setGeneralNote] = useState('')
   const [submittingNote, setSubmittingNote] = useState(false)
   const [captionCopied, setCaptionCopied] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const isManager = user?.role === 'manager'
+
+  const handleDelete = useCallback(async () => {
+    setDeleting(true)
+    try {
+      await deleteProject(projectId)
+      toast('Project deleted', 'success')
+      setConfirmDelete(false)
+      onUpdate?.()
+      onClose()
+    } catch (e) {
+      toast(e.message || 'Failed to delete project', 'error')
+      setDeleting(false)
+    }
+  }, [deleteProject, projectId, toast, onUpdate, onClose])
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose() }
@@ -252,7 +271,18 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
                   <h2 className="slideover__title">{project.description || 'Untitled Project'}</h2>
                 </div>
               </div>
-              <button className="icon-btn slideover__close" onClick={onClose}>✕</button>
+              <div className="slideover__header-actions">
+                {isManager && (
+                  <button
+                    className="icon-btn slideover__delete"
+                    onClick={() => setConfirmDelete(true)}
+                    title="Delete project"
+                  >
+                    🗑
+                  </button>
+                )}
+                <button className="icon-btn slideover__close" onClick={onClose}>✕</button>
+              </div>
             </div>
 
             {/* Status bar */}
@@ -499,6 +529,16 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
           </>
         ) : null}
       </aside>
+      {confirmDelete && (
+        <ConfirmModal
+          title="Delete project?"
+          message="This removes the project from all views. This action can only be undone by an admin."
+          confirmLabel={deleting ? 'Deleting…' : 'Delete'}
+          danger
+          onConfirm={deleting ? () => {} : handleDelete}
+          onCancel={() => !deleting && setConfirmDelete(false)}
+        />
+      )}
     </>
   )
 }

@@ -85,6 +85,15 @@ export function ProjectsProvider({ children }) {
     return updated
   }, [apiFetch])
 
+  const deleteProject = useCallback(async (id) => {
+    const res = await apiFetch(`/api/projects/${id}`, { method: 'DELETE' })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.detail || 'Failed to delete project')
+    }
+    setProjects(prev => prev.filter(p => p.id !== id))
+  }, [apiFetch])
+
   const getProject = useCallback(async (id) => {
     const res = await apiFetch(`/api/projects/${id}`)
     if (!res.ok) throw new Error('Project not found')
@@ -141,7 +150,7 @@ export function ProjectsProvider({ children }) {
   return (
     <ProjectsContext.Provider value={{
       projects, loading, error,
-      fetch, createProject, updateProject, changeStatus, getProject,
+      fetch, createProject, updateProject, changeStatus, deleteProject, getProject,
       setProjects, subscribeProject, subscribeWsEvents,
     }}>
       {children}
