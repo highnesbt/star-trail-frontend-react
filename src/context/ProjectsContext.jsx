@@ -7,7 +7,7 @@ import { useSound } from '../hooks/useSound'
 const ProjectsContext = createContext(null)
 
 export function ProjectsProvider({ children }) {
-  const { apiFetch, getAccess } = useAuth()
+  const { apiFetch, getAccess, refreshAccessToken } = useAuth()
   const toast = useToast()
   const sound = useSound()
   const [projects, setProjects] = useState([])
@@ -134,7 +134,7 @@ export function ProjectsProvider({ children }) {
     }
   }, []) // no external deps — everything via refs
 
-  useWebSocket({ getToken: getAccess, onMessage: handleWsMessage })
+  useWebSocket({ getToken: getAccess, refreshToken: refreshAccessToken, onMessage: handleWsMessage })
 
   useEffect(() => { fetch() }, [fetch])
 

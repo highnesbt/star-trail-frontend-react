@@ -31,7 +31,8 @@ const VALID_TRANSITIONS = {
 const MANAGER_ONLY = ['client_approved', 'partially_posted', 'posted', 'cancelled']
 
 function QuickStatusChanger({ project, isManager, onChanged }) {
-  const { changeStatus } = useProjects()
+  const { changeStatus, fetch } = useProjects()
+  const toast = useToast()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const ref = useRef(null)
@@ -52,8 +53,14 @@ function QuickStatusChanger({ project, isManager, onChanged }) {
     e.stopPropagation()
     setSaving(true)
     setOpen(false)
-    try { await changeStatus(project.id, status) } catch {}
-    finally { setSaving(false); onChanged?.() }
+    try {
+      await changeStatus(project.id, status)
+    } catch (err) {
+      // Surface the failure (e.g. 400 invalid transition from stale state)
+      // and resync from the server so the badge reflects reality.
+      toast(err?.message || 'Status change failed', 'error')
+      fetch()
+    } finally { setSaving(false); onChanged?.() }
   }
 
   return (

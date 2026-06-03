@@ -8,11 +8,12 @@ const WS_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:8000')
  * Connects to WS with JWT token. Reconnects automatically.
  * onMessage is stored in a ref — changing it never triggers reconnection.
  */
-export function useWebSocket({ getToken, onMessage, enabled = true }) {
+export function useWebSocket({ getToken, refreshToken, onMessage, enabled = true }) {
   const wsRef = useRef(null)
   const reconnectTimerRef = useRef(null)
   const retryCountRef = useRef(0)
   const isMountedRef = useRef(true)
+  const openedRef = useRef(false)
   const onMessageRef = useRef(onMessage)
 
   // Keep ref current without triggering reconnects
@@ -22,6 +23,7 @@ export function useWebSocket({ getToken, onMessage, enabled = true }) {
     if (!enabled || !isMountedRef.current) return
     const token = getToken()
     if (!token) return
+    openedRef.current = false
 
     // Close any existing connection before opening a new one
     if (wsRef.current && wsRef.current.readyState < 2) {
@@ -32,7 +34,7 @@ export function useWebSocket({ getToken, onMessage, enabled = true }) {
     const ws = new WebSocket(`${WS_BASE}/ws/projects/?token=${token}`)
     wsRef.current = ws
 
-    ws.onopen = () => { retryCountRef.current = 0 }
+    ws.onopen = () => { retryCountRef.current = 0; openedRef.current = true }
 
     ws.onmessage = (event) => {
       try {
@@ -43,13 +45,22 @@ export function useWebSocket({ getToken, onMessage, enabled = true }) {
 
     ws.onclose = () => {
       if (!isMountedRef.current) return
+      // If the handshake never opened, the stored token was likely rejected
+      // (wrong/expired). Refresh it before retrying so a single stale token
+      // can't permanently kill realtime updates.
+      const neverOpened = !openedRef.current
       const delay = Math.min(1000 * Math.pow(2, retryCountRef.current), 30000)
       retryCountRef.current += 1
-      reconnectTimerRef.current = setTimeout(connect, delay)
+      reconnectTimerRef.current = setTimeout(async () => {
+        if (neverOpened && refreshToken) {
+          try { await refreshToken() } catch {}
+        }
+        connect()
+      }, delay)
     }
 
     ws.onerror = () => ws.close()
-  }, [enabled, getToken]) // onMessage intentionally excluded — use ref instead
+  }, [enabled, getToken, refreshToken]) // onMessage intentionally excluded — use ref instead
 
   useEffect(() => {
     isMountedRef.current = true
