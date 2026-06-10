@@ -244,6 +244,10 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
     }
   }, [generalNote, projectId, apiFetch, toast])
 
+  // Platform posting toggles only make sense once the client has approved —
+  // toggling earlier would silently jump the status to partially_posted/posted.
+  const canTogglePlatforms = ['client_approved', 'partially_posted', 'posted'].includes(project?.status)
+
   const allowedTransitions = project ? (VALID_TRANSITIONS[project.status] || []) : []
   const canCancel = user?.role === 'manager' && !['posted', 'cancelled'].includes(project?.status)
   const allStatusOptions = [...allowedTransitions, ...(canCancel ? ['cancelled'] : [])]
@@ -443,7 +447,7 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
                     <div className="platform-status-list">
                       {(project.platforms || []).map(pl => (
                         <div key={pl} className="platform-status-row">
-                          <PlatformChip platform={pl} posted={project.platform_statuses?.[pl]} onClick={() => handlePlatformToggle(pl)} />
+                          <PlatformChip platform={pl} posted={project.platform_statuses?.[pl]} onClick={canTogglePlatforms ? () => handlePlatformToggle(pl) : undefined} />
                           <span className="platform-status-name">{pl}</span>
                           <span className={`platform-status-tag${project.platform_statuses?.[pl] ? ' posted' : ''}`}>
                             {project.platform_statuses?.[pl] ? 'Posted' : 'Pending'}

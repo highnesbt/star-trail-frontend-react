@@ -42,7 +42,15 @@ export function AuthProvider({ children }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh }),
       })
-      if (!res.ok) throw new Error('Refresh failed')
+      if (!res.ok) {
+        // Session is truly dead — log out so the app (and the WS reconnect
+        // loop) stops hammering the API with an expired token.
+        if (res.status === 401) {
+          clearTokens()
+          setUser(null)
+        }
+        throw new Error('Refresh failed')
+      }
       const data = await res.json()
       setTokens(data.access, data.refresh)
       return data.access

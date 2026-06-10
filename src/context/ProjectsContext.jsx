@@ -53,7 +53,11 @@ export function ProjectsProvider({ children }) {
       throw new Error(err.detail || 'Failed to create project')
     }
     const created = await res.json()
-    setProjects(prev => [created, ...prev])
+    // The WS 'project_created' broadcast can arrive before this response —
+    // merge instead of prepending blindly, or the project shows up twice.
+    setProjects(prev => prev.some(p => p.id === created.id)
+      ? prev.map(p => p.id === created.id ? { ...p, ...created } : p)
+      : [created, ...prev])
     return created
   }, [apiFetch])
 
@@ -119,7 +123,10 @@ export function ProjectsProvider({ children }) {
 
     // Update the projects list silently
     if (type === 'project_created') {
-      setProjects(prev => prev.find(p => p.id === project.id) ? prev : [project, ...prev])
+      // Merge if the POST response already added it (fills in client_name etc.)
+      setProjects(prev => prev.some(p => p.id === project.id)
+        ? prev.map(p => p.id === project.id ? { ...p, ...project } : p)
+        : [project, ...prev])
     } else if (type === 'project_updated' || type === 'status_changed') {
       setProjects(prev => prev.map(p => p.id === project.id ? { ...p, ...project } : p))
     } else if (type === 'project_deleted') {
