@@ -378,7 +378,7 @@ export default function ProjectsView() {
   const toast = useToast()
   const [view, setView] = useState(() => localStorage.getItem(VIEW_KEY) || 'table')
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('active')
+  const [statusFilter, setStatusFilter] = useState('all')
   const [showCreate, setShowCreate] = useState(false)
   const [openProject, setOpenProject] = useState(null)
   const [showBulkWizard, setShowBulkWizard] = useState(false)
