@@ -120,6 +120,16 @@
   position: relative;
   z-index: 1;
 }
+/* Posted projects get a very light green tint (compound selector keeps it
+   winning over the generic .cal-pill:hover rule below regardless of order) */
+.cal-pill.cal-pill--posted {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.28);
+}
+.cal-pill.cal-pill--posted:hover {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.4);
+}
 .cal-pill:hover {
   background: rgba(255,255,255,0.06);
   border-color: rgba(255,255,255,0.18);

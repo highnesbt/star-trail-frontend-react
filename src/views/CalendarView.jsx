@@ -425,7 +425,7 @@ export default function CalendarView() {
                       <button
                         key={ev.id}
                         data-id={ev.id}
-                        className={`cal-pill${dragging?.id === ev.id ? ' cal-pill--dragging' : ''}${dropTarget && dragging?.fromDate === dateStr && dropTarget.id === ev.id ? (dropTarget.edge === 'top' ? ' cal-pill--drop-before' : ' cal-pill--drop-after') : ''}`}
+                        className={`cal-pill${ev.status === 'posted' ? ' cal-pill--posted' : ''}${dragging?.id === ev.id ? ' cal-pill--dragging' : ''}${dropTarget && dragging?.fromDate === dateStr && dropTarget.id === ev.id ? (dropTarget.edge === 'top' ? ' cal-pill--drop-before' : ' cal-pill--drop-after') : ''}`}
                         style={{ '--client-color': ev.client_color || '#7C3AED' }}
                         draggable
                         onDragStart={e => handleDragStart(e, ev)}
@@ -461,7 +461,7 @@ export default function CalendarView() {
                   {projects.map(p => (
                     <button
                       key={p.id}
-                      className="cal-pill agenda-pill"
+                      className={`cal-pill agenda-pill${p.status === 'posted' ? ' cal-pill--posted' : ''}`}
                       style={{ '--client-color': p.client_color || '#7C3AED' }}
                       onClick={() => setOpenProject(p.id)}
                       title={p.description || p.client_name}
