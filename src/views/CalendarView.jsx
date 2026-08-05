@@ -50,6 +50,21 @@ function toISO(date) {
   return `${y}-${m}-${d}`
 }
 
+// Given a day cell and the cursor's Y, work out where a dragged pill would be
+// inserted among that day's pills. Returns the insertion index plus the pill to
+// draw the indicator line against (and which edge).
+function computeDropTarget(cellEl, clientY) {
+  const pills = Array.from(cellEl.querySelectorAll('.cal-pill'))
+  for (let i = 0; i < pills.length; i++) {
+    const rect = pills[i].getBoundingClientRect()
+    if (clientY < rect.top + rect.height / 2) {
+      return { index: i, id: Number(pills[i].dataset.id), edge: 'top' }
+    }
+  }
+  const last = pills[pills.length - 1]
+  return { index: pills.length, id: last ? Number(last.dataset.id) : null, edge: 'bottom' }
+}
+
 function QuickAddModal({ date, clients, onClose, onCreate }) {
   const [form, setForm] = useState({
     client_id: clients[0]?.id || '',
@@ -161,7 +176,7 @@ export default function CalendarView() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [dragOver, setDragOver] = useState(null)
   const [dragging, setDragging] = useState(null)
-  const [dragOverPill, setDragOverPill] = useState(null)
+  const [dropTarget, setDropTarget] = useState(null)
   const [clientFilter, setClientFilter] = useState('')
 
   const fetchEvents = useCallback(async () => {
@@ -271,13 +286,8 @@ export default function CalendarView() {
     e.dataTransfer.setData('text/plain', String(ev.id))
   }, [])
 
-  const handleDrop = useCallback(async (e, toDate) => {
-    e.preventDefault()
-    setDragOver(null)
-    if (!dragging || dragging.fromDate === toDate) { setDragging(null); return }
-    const { id } = dragging
-    setDragging(null)
-    // Optimistic update
+  // Move a project to a different day.
+  const changeDate = useCallback(async (id, toDate) => {
     setEvents(prev => prev.map(ev => ev.id === id ? { ...ev, posting_date: toDate } : ev))
     try {
       const res = await apiFetch(`/api/projects/${id}`, {
@@ -290,24 +300,28 @@ export default function CalendarView() {
       toast('Failed to update date', 'error')
       fetchEvents() // revert on failure
     }
-  }, [dragging, apiFetch, toast, fetchEvents])
+  }, [apiFetch, toast, fetchEvents])
 
   // Persist a new top-to-bottom order for the projects on a single day.
-  const reorderWithinDay = useCallback(async (dateStr, draggedId, targetId) => {
-    const dayList = byDate[dateStr] || []
-    const fromIdx = dayList.findIndex(e => e.id === draggedId)
-    const toIdx = dayList.findIndex(e => e.id === targetId)
-    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return
+  // insertIndex is the slot (0..n) the dragged item should occupy, computed
+  // from the cursor's Y position over the day column.
+  const reorderToIndex = useCallback(async (dateStr, draggedId, insertIndex) => {
+    const list = (byDate[dateStr] || []).slice()
+    const fromIdx = list.findIndex(e => e.id === draggedId)
+    if (fromIdx === -1) return
 
-    const reordered = dayList.slice()
-    const [moved] = reordered.splice(fromIdx, 1)
-    reordered.splice(toIdx, 0, moved)
-    const orderedIds = reordered.map(e => e.id)
+    let target = insertIndex
+    if (fromIdx < target) target -= 1 // account for the item being removed first
+    const [moved] = list.splice(fromIdx, 1)
+    target = Math.max(0, Math.min(target, list.length))
+    list.splice(target, 0, moved)
+
+    const orderedIds = list.map(e => e.id)
+    const currentIds = (byDate[dateStr] || []).map(e => e.id)
+    if (orderedIds.join(',') === currentIds.join(',')) return // no change
+
     const orderMap = new Map(orderedIds.map((id, i) => [id, i]))
-
-    // Optimistic: apply the new sort_order locally
     setEvents(prev => prev.map(e => orderMap.has(e.id) ? { ...e, sort_order: orderMap.get(e.id) } : e))
-
     try {
       const res = await apiFetch('/api/projects/reorder', {
         method: 'PATCH',
@@ -320,27 +334,24 @@ export default function CalendarView() {
     }
   }, [byDate, apiFetch, toast, fetchEvents])
 
-  const handlePillDragOver = useCallback((e, ev) => {
-    // Only show the reorder indicator when dropping within the same day
-    if (dragging && dragging.fromDate === ev.posting_date && dragging.id !== ev.id) {
-      e.preventDefault()
-      e.stopPropagation()
-      setDragOverPill(ev.id)
-    }
-  }, [dragging])
-
-  const handlePillDrop = useCallback((e, targetEv) => {
-    if (!dragging) return
+  // Drop anywhere in a day cell: same day → reorder by cursor position,
+  // different day → move the project's date.
+  const handleDrop = useCallback((e, toDate) => {
+    const cellEl = e.currentTarget
+    const clientY = e.clientY
     e.preventDefault()
-    e.stopPropagation() // don't also trigger the cell's date-change drop
-    setDragOverPill(null)
-    if (dragging.fromDate === targetEv.posting_date) {
-      reorderWithinDay(targetEv.posting_date, dragging.id, targetEv.id)
-      setDragging(null)
+    setDragOver(null)
+    setDropTarget(null)
+    const drag = dragging
+    if (!drag) return
+    setDragging(null)
+    if (drag.fromDate === toDate) {
+      const { index } = computeDropTarget(cellEl, clientY)
+      reorderToIndex(toDate, drag.id, index)
     } else {
-      handleDrop(e, targetEv.posting_date) // dropped onto another day → move date
+      changeDate(drag.id, toDate)
     }
-  }, [dragging, reorderWithinDay, handleDrop])
+  }, [dragging, reorderToIndex, changeDate])
 
   return (
     <div className="calendar-view">
@@ -398,7 +409,13 @@ export default function CalendarView() {
                   key={dateStr}
                   className={`cal-cell${inMonth ? '' : ' cal-cell--outside'}${isToday ? ' cal-cell--today' : ''}${isDragOver ? ' cal-cell--drag-over' : ''}`}
                   onDoubleClick={() => handleDblClick(day)}
-                  onDragOver={e => { e.preventDefault(); setDragOver(dateStr) }}
+                  onDragOver={e => {
+                    e.preventDefault()
+                    setDragOver(dateStr)
+                    if (dragging && dragging.fromDate === dateStr) {
+                      setDropTarget(computeDropTarget(e.currentTarget, e.clientY))
+                    }
+                  }}
                   onDragLeave={() => setDragOver(null)}
                   onDrop={e => handleDrop(e, dateStr)}
                 >
@@ -407,13 +424,12 @@ export default function CalendarView() {
                     {dayEvents.map(ev => (
                       <button
                         key={ev.id}
-                        className={`cal-pill${dragging?.id === ev.id ? ' cal-pill--dragging' : ''}${dragOverPill === ev.id ? ' cal-pill--reorder-target' : ''}`}
+                        data-id={ev.id}
+                        className={`cal-pill${dragging?.id === ev.id ? ' cal-pill--dragging' : ''}${dropTarget && dragging?.fromDate === dateStr && dropTarget.id === ev.id ? (dropTarget.edge === 'top' ? ' cal-pill--drop-before' : ' cal-pill--drop-after') : ''}`}
                         style={{ '--client-color': ev.client_color || '#7C3AED' }}
                         draggable
                         onDragStart={e => handleDragStart(e, ev)}
-                        onDragEnd={() => { setDragging(null); setDragOverPill(null) }}
-                        onDragOver={e => handlePillDragOver(e, ev)}
-                        onDrop={e => handlePillDrop(e, ev)}
+                        onDragEnd={() => { setDragging(null); setDropTarget(null); setDragOver(null) }}
                         onClick={(e) => { e.stopPropagation(); setOpenProject(ev.id) }}
                         title={ev.description || ev.client_name}
                       >

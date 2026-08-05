@@ -142,8 +142,12 @@
 }
 .cal-pill--dragging { opacity: 0.4; }
 /* Insertion indicator when reordering within the same day */
-.cal-pill--reorder-target {
-  box-shadow: 0 -2px 0 var(--violet-500), 0 2px 8px rgba(0,0,0,0.25);
+.cal-pill--drop-before {
+  box-shadow: 0 -3px 0 var(--violet-500), 0 2px 8px rgba(0,0,0,0.25);
+  border-color: var(--violet-500);
+}
+.cal-pill--drop-after {
+  box-shadow: 0 3px 0 var(--violet-500), 0 2px 8px rgba(0,0,0,0.25);
   border-color: var(--violet-500);
 }
 .cal-pill[draggable] { cursor: grab; }
