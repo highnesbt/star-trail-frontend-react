@@ -18,21 +18,29 @@ const STATUS_DOTS = {
 
 const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-function getDaysInMonth(year, month) {
+function getCalendarGrid(year, month) {
+  // Builds full Mon–Sun weeks, filling the leading/trailing gaps with the
+  // adjacent months' dates (marked inMonth:false) so no columns are left blank.
   const firstDay = new Date(year, month - 1, 1)
   const lastDay = new Date(year, month, 0)
-  const days = []
+  const cells = []
 
   let startDow = firstDay.getDay()
   startDow = startDow === 0 ? 6 : startDow - 1
-  for (let i = 0; i < startDow; i++) days.push(null)
-
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    days.push(new Date(year, month - 1, d))
+  // Trailing days of the previous month
+  for (let i = startDow; i > 0; i--) {
+    cells.push({ date: new Date(year, month - 1, 1 - i), inMonth: false })
   }
-
-  while (days.length % 7 !== 0) days.push(null)
-  return days
+  // The month itself
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    cells.push({ date: new Date(year, month - 1, d), inMonth: true })
+  }
+  // Leading days of the next month, to complete the final week
+  let next = 1
+  while (cells.length % 7 !== 0) {
+    cells.push({ date: new Date(year, month, next++), inMonth: false })
+  }
+  return cells
 }
 
 function toISO(date) {
@@ -153,15 +161,21 @@ export default function CalendarView() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [dragOver, setDragOver] = useState(null)
   const [dragging, setDragging] = useState(null)
+  const [dragOverPill, setDragOverPill] = useState(null)
   const [clientFilter, setClientFilter] = useState('')
 
   const fetchEvents = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await apiFetch(`/api/projects/calendar?year=${year}&month=${month}`)
+      // Fetch the whole visible grid (incl. adjacent-month spillover cells),
+      // not just the current month, so those cells show their real posts.
+      const grid = getCalendarGrid(year, month)
+      const from = toISO(grid[0].date)
+      const to = toISO(grid[grid.length - 1].date)
+      const res = await apiFetch(`/api/projects/?date_from=${from}&date_to=${to}&limit=500`)
       if (!res.ok) throw new Error()
       const data = await res.json()
-      setEvents(data)
+      setEvents(Array.isArray(data) ? data : (data.items ?? []))
     } catch { setEvents([]) }
     finally { setLoading(false) }
   }, [apiFetch, year, month])
@@ -171,7 +185,7 @@ export default function CalendarView() {
   // Re-fetch calendar when any project changes via WebSocket
   useEffect(() => {
     return subscribeWsEvents((msg) => {
-      if (['status_changed', 'project_updated', 'project_created', 'project_deleted'].includes(msg.type)) {
+      if (['status_changed', 'project_updated', 'project_created', 'project_deleted', 'projects_reordered'].includes(msg.type)) {
         fetchEvents()
       }
     })
@@ -192,11 +206,16 @@ export default function CalendarView() {
     else setMonth(m => m + 1)
   }
 
-  const days = useMemo(() => getDaysInMonth(year, month), [year, month])
+  const grid = useMemo(() => getCalendarGrid(year, month), [year, month])
 
   const visibleEvents = useMemo(() =>
     clientFilter ? events.filter(e => String(e.client_id) === clientFilter) : events
   , [events, clientFilter])
+
+  const sortDayEvents = (a, b) =>
+    (a.sort_order ?? 0) - (b.sort_order ?? 0)
+    || String(a.posting_time).localeCompare(String(b.posting_time))
+    || a.id - b.id
 
   const byDate = useMemo(() => {
     const map = {}
@@ -205,6 +224,7 @@ export default function CalendarView() {
       if (!map[k]) map[k] = []
       map[k].push(e)
     })
+    Object.values(map).forEach(list => list.sort(sortDayEvents))
     return map
   }, [visibleEvents])
 
@@ -219,7 +239,7 @@ export default function CalendarView() {
     })
     return Object.entries(grouped)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, projects]) => ({ date, projects }))
+      .map(([date, projects]) => ({ date, projects: projects.slice().sort(sortDayEvents) }))
   }, [visibleEvents])
 
   const formatAgendaDate = (dateStr) =>
@@ -272,6 +292,56 @@ export default function CalendarView() {
     }
   }, [dragging, apiFetch, toast, fetchEvents])
 
+  // Persist a new top-to-bottom order for the projects on a single day.
+  const reorderWithinDay = useCallback(async (dateStr, draggedId, targetId) => {
+    const dayList = byDate[dateStr] || []
+    const fromIdx = dayList.findIndex(e => e.id === draggedId)
+    const toIdx = dayList.findIndex(e => e.id === targetId)
+    if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return
+
+    const reordered = dayList.slice()
+    const [moved] = reordered.splice(fromIdx, 1)
+    reordered.splice(toIdx, 0, moved)
+    const orderedIds = reordered.map(e => e.id)
+    const orderMap = new Map(orderedIds.map((id, i) => [id, i]))
+
+    // Optimistic: apply the new sort_order locally
+    setEvents(prev => prev.map(e => orderMap.has(e.id) ? { ...e, sort_order: orderMap.get(e.id) } : e))
+
+    try {
+      const res = await apiFetch('/api/projects/reorder', {
+        method: 'PATCH',
+        body: JSON.stringify({ ordered_ids: orderedIds }),
+      })
+      if (!res.ok) throw new Error()
+    } catch {
+      toast('Failed to reorder', 'error')
+      fetchEvents() // revert on failure
+    }
+  }, [byDate, apiFetch, toast, fetchEvents])
+
+  const handlePillDragOver = useCallback((e, ev) => {
+    // Only show the reorder indicator when dropping within the same day
+    if (dragging && dragging.fromDate === ev.posting_date && dragging.id !== ev.id) {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragOverPill(ev.id)
+    }
+  }, [dragging])
+
+  const handlePillDrop = useCallback((e, targetEv) => {
+    if (!dragging) return
+    e.preventDefault()
+    e.stopPropagation() // don't also trigger the cell's date-change drop
+    setDragOverPill(null)
+    if (dragging.fromDate === targetEv.posting_date) {
+      reorderWithinDay(targetEv.posting_date, dragging.id, targetEv.id)
+      setDragging(null)
+    } else {
+      handleDrop(e, targetEv.posting_date) // dropped onto another day → move date
+    }
+  }, [dragging, reorderWithinDay, handleDrop])
+
   return (
     <div className="calendar-view">
       <div className="calendar-header">
@@ -317,8 +387,7 @@ export default function CalendarView() {
           </div>
         ) : (
           <div className="calendar-grid">
-            {days.map((day, i) => {
-              if (!day) return <div key={`empty-${i}`} className="cal-cell cal-cell--empty" />
+            {grid.map(({ date: day, inMonth }) => {
               const dateStr = toISO(day)
               const dayEvents = byDate[dateStr] || []
               const isToday = dateStr === todayStr
@@ -327,7 +396,7 @@ export default function CalendarView() {
               return (
                 <div
                   key={dateStr}
-                  className={`cal-cell${isToday ? ' cal-cell--today' : ''}${isDragOver ? ' cal-cell--drag-over' : ''}`}
+                  className={`cal-cell${inMonth ? '' : ' cal-cell--outside'}${isToday ? ' cal-cell--today' : ''}${isDragOver ? ' cal-cell--drag-over' : ''}`}
                   onDoubleClick={() => handleDblClick(day)}
                   onDragOver={e => { e.preventDefault(); setDragOver(dateStr) }}
                   onDragLeave={() => setDragOver(null)}
@@ -338,11 +407,13 @@ export default function CalendarView() {
                     {dayEvents.map(ev => (
                       <button
                         key={ev.id}
-                        className={`cal-pill${dragging?.id === ev.id ? ' cal-pill--dragging' : ''}`}
+                        className={`cal-pill${dragging?.id === ev.id ? ' cal-pill--dragging' : ''}${dragOverPill === ev.id ? ' cal-pill--reorder-target' : ''}`}
                         style={{ '--client-color': ev.client_color || '#7C3AED' }}
                         draggable
                         onDragStart={e => handleDragStart(e, ev)}
-                        onDragEnd={() => setDragging(null)}
+                        onDragEnd={() => { setDragging(null); setDragOverPill(null) }}
+                        onDragOver={e => handlePillDragOver(e, ev)}
+                        onDrop={e => handlePillDrop(e, ev)}
                         onClick={(e) => { e.stopPropagation(); setOpenProject(ev.id) }}
                         title={ev.description || ev.client_name}
                       >

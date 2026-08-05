@@ -79,6 +79,10 @@
 }
 .cal-cell:nth-child(7n) { border-right: none; }
 .cal-cell--empty { background: rgba(0,0,0,0.02); }
+/* Adjacent-month spillover days: dimmed so the current month stands out */
+.cal-cell--outside { background: rgba(0,0,0,0.14); }
+.cal-cell--outside .cal-cell__num { opacity: 0.45; }
+.cal-cell--outside .cal-pill { opacity: 0.72; }
 .cal-cell:hover:not(.cal-cell--empty) { background: var(--bg-hover); }
 .cal-cell--today {
   outline: 2px solid var(--violet-500);
@@ -137,6 +141,11 @@
   outline-offset: -2px;
 }
 .cal-pill--dragging { opacity: 0.4; }
+/* Insertion indicator when reordering within the same day */
+.cal-pill--reorder-target {
+  box-shadow: 0 -2px 0 var(--violet-500), 0 2px 8px rgba(0,0,0,0.25);
+  border-color: var(--violet-500);
+}
 .cal-pill[draggable] { cursor: grab; }
 .cal-pill[draggable]:active { cursor: grabbing; }
 
