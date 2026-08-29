@@ -119,28 +119,27 @@ export function ProjectsProvider({ children }) {
 
   const handleWsMessage = useCallback((msg) => {
     const { type, project } = msg
-    if (!project) return
 
-    // Update the projects list silently
-    if (type === 'project_created') {
-      // Merge if the POST response already added it (fills in client_name etc.)
-      setProjects(prev => prev.some(p => p.id === project.id)
-        ? prev.map(p => p.id === project.id ? { ...p, ...project } : p)
-        : [project, ...prev])
-    } else if (type === 'project_updated' || type === 'status_changed') {
-      setProjects(prev => prev.map(p => p.id === project.id ? { ...p, ...project } : p))
-    } else if (type === 'project_deleted') {
-      setProjects(prev => prev.filter(p => p.id !== project.id))
+    if (project) {
+      // Update the projects list silently
+      if (type === 'project_created') {
+        // Merge if the POST response already added it (fills in client_name etc.)
+        setProjects(prev => prev.some(p => p.id === project.id)
+          ? prev.map(p => p.id === project.id ? { ...p, ...project } : p)
+          : [project, ...prev])
+      } else if (type === 'project_updated' || type === 'status_changed') {
+        setProjects(prev => prev.map(p => p.id === project.id ? { ...p, ...project } : p))
+      } else if (type === 'project_deleted') {
+        setProjects(prev => prev.filter(p => p.id !== project.id))
+      }
+      listenersRef.current.get(project.id)?.forEach(cb => cb(msg))
     }
 
-    // Notify per-project listeners (e.g. open ProjectDetail)
-    listenersRef.current.get(project.id)?.forEach(cb => cb(msg))
-
-    // Notify global listeners (e.g. CalendarView)
+    // Calendar views (posts + shoots) subscribe here
     globalListenersRef.current.forEach(cb => cb(msg))
 
     // Toast + sound only for status changes
-    if (type === 'status_changed') {
+    if (type === 'status_changed' && project) {
       toastRef.current(
         `${project.description || 'Project'} → ${msg.new_status?.replace(/_/g, ' ') || project.status_display || project.status}`,
         'status',

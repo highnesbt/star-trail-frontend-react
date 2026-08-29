@@ -1,0 +1,71 @@
+.cal-pill.cal-pill--completed {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.28);
+}
+.cal-pill.cal-pill--completed:hover {
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+.cal-pill.cal-pill--cancelled {
+  opacity: 0.55;
+}
+.cal-pill.cal-pill--cancelled .cal-pill__text {
+  text-decoration: line-through;
+}
+
+.cal-pill__time {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.shoot-modal {
+  max-width: 460px;
+}
+
+.shoot-modal__status {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.shoot-status-btn {
+  flex: 1;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.shoot-status-btn.active {
+  border-color: var(--status-color, var(--violet-500));
+  color: var(--status-color, var(--violet-400));
+  background: color-mix(in srgb, var(--status-color, var(--violet-500)) 14%, transparent);
+}
+
+.shoot-modal__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}
+.shoot-modal__footer-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+@media (max-width: 767px) {
+  .form-row { grid-template-columns: 1fr; }
+}

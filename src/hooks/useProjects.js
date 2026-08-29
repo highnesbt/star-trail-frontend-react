@@ -23,3 +23,23 @@ export function useClients() {
 
   return { clients, loading, refetch: fetch }
 }
+
+export function useUsers() {
+  const { apiFetch } = useAuth()
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const fetch = useCallback(async () => {
+    try {
+      const res = await apiFetch('/api/auth/users')
+      if (!res.ok) throw new Error('Failed to load users')
+      const data = await res.json()
+      setUsers(Array.isArray(data) ? data : [])
+    } catch {}
+    finally { setLoading(false) }
+  }, [apiFetch])
+
+  useEffect(() => { fetch() }, [fetch])
+
+  return { users, loading, refetch: fetch }
+}

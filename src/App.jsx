@@ -8,6 +8,7 @@ import { lazy, Suspense } from 'react'
 
 const ProjectsView = lazy(() => import('./views/ProjectsView'))
 const CalendarView = lazy(() => import('./views/CalendarView'))
+const ShootCalendarView = lazy(() => import('./views/ShootCalendarView'))
 const ClientsView = lazy(() => import('./views/ClientsView'))
 const ChangelogView = lazy(() => import('./views/ChangelogView'))
 
@@ -33,6 +34,7 @@ function AppRoutes() {
         <Route index element={<Navigate to="/projects" replace />} />
         <Route path="projects" element={<Suspense fallback={<PageLoader />}><ProjectsView /></Suspense>} />
         <Route path="calendar" element={<Suspense fallback={<PageLoader />}><CalendarView /></Suspense>} />
+        <Route path="shoots" element={<Suspense fallback={<PageLoader />}><ShootCalendarView /></Suspense>} />
         <Route path="clients" element={<Suspense fallback={<PageLoader />}><ClientsView /></Suspense>} />
         <Route path="changelog" element={<Suspense fallback={<PageLoader />}><ChangelogView /></Suspense>} />
         <Route path="*" element={<Navigate to="/projects" replace />} />
