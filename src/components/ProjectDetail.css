@@ -78,23 +78,13 @@
   white-space: nowrap;
 }
 .btn-change-status:hover { color: var(--text-primary); border-color: var(--border-strong); }
-.btn-repost {
-  color: var(--text-primary);
-  border-color: var(--border-violet);
-  min-height: 44px;
-  padding: 8px 14px;
-}
-.btn-repost:hover { background: var(--violet-900); color: var(--text-primary); }
+.btn-repost:hover { background: var(--violet-900); color: var(--text-primary); border-color: var(--border-violet); }
 .btn-repost:focus-visible {
   outline: 2px solid var(--violet-400);
   outline-offset: 2px;
 }
 .repost-dialog__date { margin-top: 16px; }
-.repost-dialog input[type="date"] {
-  color-scheme: dark;
-  min-height: 44px;
-}
-.repost-dialog .modal-btn { min-height: 44px; }
+.repost-dialog input[type="date"] { color-scheme: dark; }
 .repost-dialog .modal-message strong { color: var(--text-primary); font-weight: 600; }
 
 .status-change-area { position: relative; }
