@@ -46,6 +46,22 @@ function formatDate(d) {
   return new Date(d + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function localTodayISO() {
+  const d = new Date()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${month}-${day}`
+}
+
+function repostName(description) {
+  const suffix = ' (repost)'
+  const base = (description || '').replace(/\s+$/u, '')
+  if (!base) return '(repost)'
+  const maxBase = 500 - suffix.length
+  const trimmed = base.length > maxBase ? base.slice(0, maxBase).replace(/\s+$/u, '') : base
+  return `${trimmed}${suffix}`
+}
+
 // Inline editable field with auto-save
 function EditableField({ label, value, onSave, type = 'text', multiline = false, placeholder = '' }) {
   const [draft, setDraft] = useState(value || '')
@@ -106,7 +122,7 @@ function EditableField({ label, value, onSave, type = 'text', multiline = false,
 
 export default function ProjectDetail({ projectId, onClose, onUpdate }) {
   const { user, apiFetch } = useAuth()
-  const { subscribeProject, deleteProject } = useProjects()
+  const { subscribeProject, deleteProject, setProjects } = useProjects()
   const toast = useToast()
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -119,6 +135,10 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
   const [captionCopied, setCaptionCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [repostOpen, setRepostOpen] = useState(false)
+  const [repostDate, setRepostDate] = useState(localTodayISO)
+  const [reposting, setReposting] = useState(false)
+  const [repostError, setRepostError] = useState('')
 
   const isManager = user?.role === 'manager'
 
@@ -137,10 +157,17 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
   }, [deleteProject, projectId, toast, onUpdate, onClose])
 
   useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') onClose() }
+    const handler = (e) => { if (e.key === 'Escape' && !repostOpen) onClose() }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
+  }, [onClose, repostOpen])
+
+  useEffect(() => {
+    if (!repostOpen) return undefined
+    const handler = (e) => { if (e.key === 'Escape') setRepostOpen(false) }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [repostOpen])
 
   const loadProject = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -244,6 +271,46 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
     }
   }, [generalNote, projectId, apiFetch, toast])
 
+  const openRepost = useCallback(() => {
+    setRepostDate(localTodayISO())
+    setRepostError('')
+    setRepostOpen(true)
+  }, [])
+
+  const handleRepost = useCallback(async () => {
+    if (!repostDate || reposting) return
+    setReposting(true)
+    setRepostError('')
+    try {
+      const res = await apiFetch(`/api/projects/${projectId}/repost`, {
+        method: 'POST',
+        body: JSON.stringify({ posting_date: repostDate }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.detail || 'Failed to repost')
+      }
+      const created = await res.json()
+      const row = {
+        ...created,
+        client_id: created.client?.id,
+        client_name: created.client?.name || '',
+        client_color: created.client?.color || '',
+        client_logo: created.client?.logo || null,
+      }
+      setProjects(prev => prev.some(p => p.id === row.id)
+        ? prev.map(p => p.id === row.id ? { ...p, ...row } : p)
+        : [row, ...prev])
+      toast(`Repost scheduled for ${formatDate(repostDate)}`, 'success')
+      setRepostOpen(false)
+      onUpdate?.(created)
+    } catch (e) {
+      setRepostError(e.message || 'Failed to repost')
+    } finally {
+      setReposting(false)
+    }
+  }, [repostDate, reposting, apiFetch, projectId, setProjects, toast, onUpdate])
+
   // Platform posting toggles only make sense once the client has approved —
   // toggling earlier would silently jump the status to partially_posted/posted.
   const canTogglePlatforms = ['client_approved', 'partially_posted', 'posted'].includes(project?.status)
@@ -298,6 +365,11 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
                 )}
                 <AssetIndicator hasVideo={Boolean(project.video_post_link)} hasThumbnail={Boolean(project.thumbnail_link)} />
               </div>
+              {project.status === 'posted' && (
+                <button type="button" className="btn-change-status btn-repost" onClick={openRepost}>
+                  Repost
+                </button>
+              )}
               {allStatusOptions.length > 0 && (
                 <div className="status-change-area">
                   <button
@@ -533,6 +605,42 @@ export default function ProjectDetail({ projectId, onClose, onUpdate }) {
           </>
         ) : null}
       </aside>
+      {repostOpen && project && (
+        <div className="modal-overlay" onClick={() => !reposting && setRepostOpen(false)}>
+          <div
+            className="modal-box repost-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="repost-title"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 id="repost-title" className="modal-title">Repost</h3>
+            <p className="modal-message">
+              Creates a copy named <strong>{repostName(project.description)}</strong>. The original stays posted.
+            </p>
+            <div className="form-field repost-dialog__date">
+              <label htmlFor="repost-date">Posting date</label>
+              <input
+                id="repost-date"
+                type="date"
+                value={repostDate}
+                onChange={e => setRepostDate(e.target.value)}
+                autoFocus
+                required
+              />
+            </div>
+            {repostError && <p className="form-error" role="alert">{repostError}</p>}
+            <div className="modal-actions">
+              <button type="button" className="modal-btn modal-btn--ghost" onClick={() => setRepostOpen(false)} disabled={reposting}>
+                Cancel
+              </button>
+              <button type="button" className="modal-btn modal-btn--primary" onClick={handleRepost} disabled={reposting || !repostDate}>
+                {reposting ? 'Reposting…' : 'Repost'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {confirmDelete && (
         <ConfirmModal
           title="Delete project?"
